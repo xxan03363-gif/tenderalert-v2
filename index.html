@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TenderAlert — Procurement Intelligence</title><link rel="stylesheet" href="styles.css"></head>
+<body>
+<header><div class="brand"><b>T</b><div><strong>TenderAlert</strong><small>Procurement Intelligence</small></div></div>
+<nav><a href="#how">How it works</a><a href="#tenders">Tenders</a><a href="#pricing">Pricing</a></nav></header>
+<main>
+<section class="hero"><div><label>🇺🇬 BUILT FOR UGANDAN BUSINESSES</label><h1>Find the right tenders.<span> Before your competitors.</span></h1>
+<p>Discover relevant procurement opportunities, understand them quickly, and get matched alerts for your business.</p>
+<button onclick="document.querySelector('#pricing').scrollIntoView({behavior:'smooth'})">Start free trial</button>
+<button class="ghost" onclick="document.querySelector('#tenders').scrollIntoView({behavior:'smooth'})">Explore tenders</button></div>
+<div class="heroCard"><small>● LIVE TENDER INTELLIGENCE</small><article><em>CONSTRUCTION</em><h2>Construction of District Roads</h2><p>Local Government • Uganda</p><hr><div><b>Deadline<br>28 Sep 2026</b><b class="green">94% MATCH<br>Open</b></div></article></div></section>
+<section class="stats"><div><b>01</b>Choose sectors</div><div><b>02</b>We monitor opportunities</div><div><b>03</b>Get matched alerts</div><div><b>04</b>Decide what to bid for</div></section>
+<section id="tenders"><label>TENDER DISCOVERY</label><h2>Opportunities worth seeing.</h2>
+<div class="filters"><input id="q" placeholder="Search tenders..." oninput="filter()"><select id="sector" onchange="filter()"><option>All sectors</option><option>Construction</option><option>Supplies</option><option>IT</option><option>Consultancy</option></select></div><div id="grid" class="grid"></div></section>
+<section id="how" class="dark"><label>HOW TENDERALERT WORKS</label><h2>Less searching. More bidding.</h2><div class="steps"><article><b>01</b><h3>Tell us your business</h3><p>Select industries, locations and preferences.</p></article><article><b>02</b><h3>We monitor</h3><p>Continuously watch relevant procurement sources.</p></article><article><b>03</b><h3>We simplify</h3><p>See important requirements in plain language.</p></article><article><b>04</b><h3>You get alerted</h3><p>Receive opportunities matched to your business.</p></article></div></section>
+<section id="pricing"><label>PRICING</label><h2>Start small. Grow with your opportunities.</h2><div class="prices">
+<article><label>STARTER</label><h2>UGX 15,000<small>/month</small></h2><p>For one main sector.</p><ul><li>One sector</li><li>Matched tender alerts</li><li>Plain-language summaries</li><li>Compliance checklist</li><li>Free trial</li></ul><button onclick="signup('Starter')">Start Starter</button></article>
+<article class="featured"><label>PRO</label><h2>UGX 30,000<small>/month</small></h2><p>For multiple sectors and priority alerts.</p><ul><li>Multiple sectors</li><li>Priority alerts</li><li>Plain-language summaries</li><li>Compliance checklist</li><li>Free trial</li></ul><button onclick="signup('PRO')">Start PRO</button></article></div></section>
+<section class="cta"><div><label>READY WHEN YOU ARE</label><h2>Stop finding tenders by accident.</h2><p>Build a procurement pipeline around opportunities your business can actually pursue.</p></div><button onclick="signup('Free Trial')">Get started</button></section>
+</main><footer><strong>TenderAlert</strong><span>© 2026 TenderAlert • Uganda</span></footer>
+<div id="modal" class="modal hidden"><div class="modalbox"><button class="x" onclick="closeModal()">×</button><label>GET STARTED</label><h2 id="mt">Start your free trial</h2><input id="name" placeholder="Business name"><input id="email" placeholder="Business email"><select><option>Construction</option><option>Supplies</option><option>IT</option><option>Consultancy</option><option>Medical</option><option>Agriculture</option></select><button onclick="submitForm()">Request access</button><p id="msg"></p></div></div>
+<script src="app.js"></script></body></html>
