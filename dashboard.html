@@ -238,5 +238,28 @@ button{
 
 </div>
 
+<script>
+const filterButton = document.querySelector('.section-title .secondary');
+
+filterButton.addEventListener('click', function () {
+  const sector = prompt(
+    'Enter a sector:\nConstruction\nSupplies\nIT'
+  );
+
+  if (!sector) return;
+
+  const tenders = document.querySelectorAll('.tender');
+
+  tenders.forEach(function (tender) {
+    const text = tender.innerText.toLowerCase();
+
+    if (text.includes(sector.toLowerCase())) {
+      tender.style.display = 'block';
+    } else {
+      tender.style.display = 'none';
+    }
+  });
+});
+</script>
 </body>
   </html>
