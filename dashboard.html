@@ -856,5 +856,281 @@ function getFilteredTenders() {
 }
 
 function renderTenders() {
-  const list = document.getElementById("tenderLis
-                                       <\html>
+  const list = document.getElementById("tenderList");
+  const noResults = document.getElementById("noResults");
+  const filtered = getFilteredTenders();
+
+  list.innerHTML = "";
+
+  if (filtered.length === 0) {
+    noResults.style.display = "block";
+  } else {
+    noResults.style.display = "none";
+  }
+
+  filtered.forEach(t => {
+    const card = document.createElement("div");
+    card.className = "tender";
+
+    const saved = isSaved(t.id);
+
+    card.innerHTML = `
+      <span class="badge">${t.sector}</span>
+      <span class="match">${t.match}% Match</span>
+      <h3>${t.title}</h3>
+      <div class="details">
+        Procuring organization: ${t.organization}<br>
+        Location: ${t.location}<br>
+        Deadline: ${formatDate(t.deadline)}${isClosingSoon(t.deadline) ? " • Closing soon" : ""}<br>
+        Sector: ${t.sector}
+      </div>
+      <br>
+      <button class="primary view-btn" data-id="${t.id}">View Tender</button>
+      <button class="secondary saved-btn ${saved ? "is-saved" : ""}" data-id="${t.id}">${saved ? "Saved" : "Save"}</button>
+    `;
+
+    list.appendChild(card);
+  });
+
+  attachCardEvents();
+  updateStats();
+}
+
+function attachCardEvents() {
+  document.querySelectorAll(".view-btn").forEach(btn => {
+    btn.addEventListener("click", () => openDetailsModal(btn.dataset.id));
+  });
+
+  document.querySelectorAll(".tender .saved-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      toggleSaved(btn.dataset.id);
+      renderTenders();
+    });
+  });
+}
+
+function updateStats() {
+  const matching = tenders.filter(t => t.match >= 70).length;
+  const closingSoon = tenders.filter(t => isClosingSoon(t.deadline)).length;
+  const saved = getSavedIds().length;
+
+  document.getElementById("statMatching").textContent = matching;
+  document.getElementById("statClosingSoon").textContent = closingSoon;
+  document.getElementById("statSaved").textContent = saved;
+}
+
+/* ============================
+   DETAILS MODAL
+   ============================ */
+let activeDetailId = null;
+
+function openDetailsModal(id) {
+  const tender = tenders.find(t => t.id === id);
+  if (!tender) return;
+
+  activeDetailId = id;
+
+  document.getElementById("detailTitle").textContent = tender.title;
+  document.getElementById("detailSector").textContent = tender.sector;
+  document.getElementById("detailOrg").textContent = tender.organization;
+  document.getElementById("detailLocation").textContent = tender.location;
+  document.getElementById("detailDeadline").textContent = formatDate(tender.deadline);
+  document.getElementById("detailMatch").textContent = tender.match + "%";
+  document.getElementById("detailReference").textContent = tender.reference;
+  document.getElementById("detailSummary").textContent = tender.summary;
+  document.getElementById("detailBuyerWants").textContent = tender.buyerWants;
+  document.getElementById("detailEligibility").textContent = tender.eligibility;
+
+  const reqList = document.getElementById("detailRequirements");
+  reqList.innerHTML = "";
+  tender.requirements.forEach(r => {
+    const li = document.createElement("li");
+    li.textContent = r;
+    reqList.appendChild(li);
+  });
+
+  const docList = document.getElementById("detailDocuments");
+  docList.innerHTML = "";
+  tender.documents.forEach(d => {
+    const li = document.createElement("li");
+    li.textContent = d;
+    docList.appendChild(li);
+  });
+
+  updateDetailSaveButton();
+  openModal("detailsOverlay");
+}
+
+function updateDetailSaveButton() {
+  const btn = document.getElementById("detailSaveBtn");
+  const saved = isSaved(activeDetailId);
+  btn.textContent = saved ? "Saved" : "Save Tender";
+  btn.classList.toggle("is-saved", saved);
+}
+
+/* ============================
+   MODAL HELPERS
+   ============================ */
+function openModal(id) {
+  document.getElementById(id).classList.add("open");
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove("open");
+}
+
+/* ============================
+   PROFILE HELPERS
+   ============================ */
+function getProfile() {
+  try {
+    return JSON.parse(localStorage.getItem(PROFILE_KEY)) || {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function setProfile(profile) {
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+}
+
+function loadProfileIntoForm() {
+  const profile = getProfile();
+  document.getElementById("profName").value = profile.name || "";
+  document.getElementById("profEmail").value = profile.email || "";
+  document.getElementById("profPhone").value = profile.phone || "";
+  document.getElementById("profSector").value = profile.sector || "";
+  document.getElementById("profLocation").value = profile.location || "";
+
+  document.querySelectorAll(".prefSector").forEach(cb => {
+    cb.checked = (profile.preferredSectors || []).includes(cb.value);
+  });
+}
+
+function renderRecommendLine() {
+  const profile = getProfile();
+  const line = document.getElementById("recommendLine");
+
+  if (profile.preferredSectors && profile.preferredSectors.length > 0) {
+    line.style.display = "block";
+    line.textContent = "Recommended for your business — preferred sectors: " + profile.preferredSectors.join(", ");
+  } else {
+    line.style.display = "none";
+  }
+}
+
+/* ============================
+   EVENT WIRING
+   Everything below runs only after the DOM is fully parsed,
+   so every element referenced here is guaranteed to exist.
+   ============================ */
+function initEventListeners() {
+  // Modal close buttons
+  document.querySelectorAll("[data-close]").forEach(btn => {
+    btn.addEventListener("click", () => closeModal(btn.dataset.close));
+  });
+
+  // Click outside modal box closes it
+  document.querySelectorAll(".overlay").forEach(overlay => {
+    overlay.addEventListener("click", e => {
+      if (e.target === overlay) {
+        overlay.classList.remove("open");
+      }
+    });
+  });
+
+  // Details modal save button
+  document.getElementById("detailSaveBtn").addEventListener("click", () => {
+    if (!activeDetailId) return;
+    toggleSaved(activeDetailId);
+    updateDetailSaveButton();
+    renderTenders();
+  });
+
+  // Filter panel
+  document.getElementById("filterBtn").addEventListener("click", () => openModal("filterOverlay"));
+
+  document.getElementById("applyFilterBtn").addEventListener("click", () => {
+    state.sector = document.getElementById("filterSector").value;
+    state.location = document.getElementById("filterLocation").value;
+    state.minMatch = parseInt(document.getElementById("filterMatch").value, 10);
+    state.closingSoonOnly = document.getElementById("filterClosingSoon").checked;
+    closeModal("filterOverlay");
+    renderTenders();
+  });
+
+  document.getElementById("clearFilterBtn").addEventListener("click", () => {
+    document.getElementById("filterSector").value = "all";
+    document.getElementById("filterLocation").value = "all";
+    document.getElementById("filterMatch").value = "0";
+    document.getElementById("filterClosingSoon").checked = false;
+
+    state.sector = "all";
+    state.location = "all";
+    state.minMatch = 0;
+    state.closingSoonOnly = false;
+
+    closeModal("filterOverlay");
+    renderTenders();
+  });
+
+  // Saved only toggle
+  document.getElementById("savedToggleBtn").addEventListener("click", function () {
+    state.savedOnly = !state.savedOnly;
+    this.classList.toggle("active", state.savedOnly);
+    this.textContent = state.savedOnly ? "Showing Saved" : "Saved Only";
+    renderTenders();
+  });
+
+  // Search
+  document.getElementById("searchInput").addEventListener("input", function () {
+    state.search = this.value;
+    renderTenders();
+  });
+
+  // Account modal
+  document.getElementById("accountBtn").addEventListener("click", () => {
+    loadProfileIntoForm();
+    openModal("accountOverlay");
+  });
+
+  document.getElementById("saveProfileBtn").addEventListener("click", () => {
+    const preferredSectors = Array.from(document.querySelectorAll(".prefSector:checked")).map(cb => cb.value);
+
+    const profile = {
+      name: document.getElementById("profName").value.trim(),
+      email: document.getElementById("profEmail").value.trim(),
+      phone: document.getElementById("profPhone").value.trim(),
+      sector: document.getElementById("profSector").value,
+      location: document.getElementById("profLocation").value.trim(),
+      preferredSectors: preferredSectors
+    };
+
+    setProfile(profile);
+    closeModal("accountOverlay");
+    renderRecommendLine();
+  });
+}
+
+/* ============================
+   INIT
+   Runs the first render, wires up every event listener,
+   and restores any saved profile — all after the DOM exists.
+   ============================ */
+function init() {
+  populateLocationFilter();
+  initEventListeners();
+  renderRecommendLine();
+  renderTenders();
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>
+
+
