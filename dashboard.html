@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TenderAlert Dashboard</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#07111f;
+  color:#fff;
+}
+
+header{
+  padding:18px;
+  background:#0b1728;
+  border-bottom:1px solid #24344b;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.logo{
+  font-size:22px;
+  font-weight:800;
+}
+
+.logo span{
+  color:#38bdf8;
+}
+
+.menu{
+  background:#16253a;
+  border:1px solid #30435c;
+  color:white;
+  padding:10px 14px;
+  border-radius:10px;
+}
+
+.container{
+  max-width:1100px;
+  margin:auto;
+  padding:22px;
+}
+
+.welcome{
+  margin-bottom:25px;
+}
+
+.welcome h1{
+  margin-bottom:6px;
+}
+
+.welcome p{
+  color:#9fb0c5;
+}
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:14px;
+  margin-bottom:25px;
+}
+
+.stat{
+  background:#101e31;
+  border:1px solid #263b55;
+  border-radius:14px;
+  padding:18px;
+}
+
+.stat strong{
+  display:block;
+  font-size:26px;
+  margin-top:8px;
+}
+
+.section-title{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.tender{
+  background:#101e31;
+  border:1px solid #263b55;
+  border-radius:15px;
+  padding:18px;
+  margin:14px 0;
+}
+
+.badge{
+  display:inline-block;
+  background:#123d58;
+  color:#5dd3ff;
+  padding:6px 9px;
+  border-radius:20px;
+  font-size:12px;
+}
+
+.match{
+  float:right;
+  background:#163d2a;
+  color:#62e69a;
+  padding:6px 9px;
+  border-radius:20px;
+  font-size:12px;
+}
+
+.tender h3{
+  margin:14px 0 8px;
+}
+
+.details{
+  color:#9fb0c5;
+  line-height:1.6;
+}
+
+button{
+  border:0;
+  border-radius:9px;
+  padding:11px 15px;
+  cursor:pointer;
+}
+
+.primary{
+  background:#18a6e8;
+  color:white;
+}
+
+.secondary{
+  background:#1a2b40;
+  color:white;
+  margin-left:8px;
+}
+
+@media(max-width:700px){
+  .stats{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">Tender<span>Alert</span></div>
+  <button class="menu">Account</button>
+</header>
+
+<div class="container">
+
+  <div class="welcome">
+    <h1>Business Dashboard</h1>
+    <p>Welcome to TenderAlert. Here are opportunities matched to your business.</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <small>Matching tenders</small>
+      <strong>12</strong>
+    </div>
+
+    <div class="stat">
+      <small>Closing soon</small>
+      <strong>4</strong>
+    </div>
+
+    <div class="stat">
+      <small>Saved tenders</small>
+      <strong>3</strong>
+    </div>
+  </div>
+
+  <div class="section-title">
+    <h2>Recommended Tenders</h2>
+    <button class="secondary">Filter</button>
+  </div>
+
+  <div class="tender">
+    <span class="badge">Construction</span>
+    <span class="match">92% Match</span>
+
+    <h3>Construction of District Roads</h3>
+
+    <div class="details">
+      Procuring organization: Local Government • Uganda<br>
+      Deadline: 28 September 2026<br>
+      Sector: Construction
+    </div>
+
+    <br>
+
+    <button class="primary">View Tender</button>
+    <button class="secondary">Save</button>
+  </div>
+
+  <div class="tender">
+    <span class="badge">Supplies</span>
+    <span class="match">87% Match</span>
+
+    <h3>Supply of Construction Materials</h3>
+
+    <div class="details">
+      Procuring organization: Public Institution<br>
+      Deadline: 30 September 2026<br>
+      Sector: Supplies
+    </div>
+
+    <br>
+
+    <button class="primary">View Tender</button>
+    <button class="secondary">Save</button>
+  </div>
+
+  <div class="tender">
+    <span class="badge">IT</span>
+    <span class="match">81% Match</span>
+
+    <h3>ICT Infrastructure & Support Services</h3>
+
+    <div class="details">
+      Procuring organization: Government Agency<br>
+      Deadline: 16 October 2026<br>
+      Sector: IT
+    </div>
+
+    <br>
+
+    <button class="primary">View Tender</button>
+    <button class="secondary">Save</button>
+  </div>
+
+</div>
+
+</body>
+  </html>
