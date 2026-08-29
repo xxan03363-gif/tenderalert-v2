@@ -377,4 +377,87 @@ async function runAllTests() {
   }), 'REJECTED', r => JSON.stringify(r.reasons).includes('not valid JSON'));
 
   await run('Unexpected extra field -> REJECTED', enrichTender({
-  
+  sourceFacts: { title: 'Some Tender', sector: 'IT', organization: 'Some Org', location: 'Kampala', deadline: '2027-10-05', reference: null },
+    sourceText: 'Some source text.',
+    adapter: mockAdapter,
+    scenarioKey: 'unexpected_field',
+    maxRetries: 0
+  }), 'REJECTED', r => JSON.stringify(r.reasons).includes('unexpected field'));
+
+  await run('Immutable field leak (title) -> REJECTED', enrichTender({
+    sourceFacts: { title: 'Some Tender', sector: 'IT', organization: 'Some Org', location: 'Kampala', deadline: '2027-10-05', reference: null },
+    sourceText: 'Some source text.',
+    adapter: mockAdapter,
+    scenarioKey: 'immutable_leak',
+    maxRetries: 0
+  }), 'REJECTED', r => JSON.stringify(r.reasons).includes('immutable fact field'));
+
+  /* ============================================================
+     CACHING TESTS
+     ============================================================ */
+  console.log('');
+  console.log('=== CACHING TESTS ===');
+
+  const cache = createInMemoryCache();
+  const cacheAdapter = createMockAdapter(scenarios);
+
+  const firstCall = await run('Cache — first call (should call adapter)', enrichTender({
+    sourceFacts: { title: 'Construction of District Roads', sector: 'Construction', organization: 'Ministry of Works', location: 'Kampala', deadline: '2027-09-28', reference: 'PPDA/DEMO/2026/001' },
+    sourceText: 'This tender is for the construction of a district road network spanning 12km. Bidders must submit a valid company registration certificate and evidence of at least two similar past road projects. Required documents: certificate of incorporation, tax clearance certificate, technical proposal. Deadline: 2027-09-28.',
+    adapter: cacheAdapter,
+    scenarioKey: 'construction_good',
+    cache
+  }), 'ACCEPTED');
+
+  const secondCall = await run('Cache — second identical call (should hit cache, not call adapter)', enrichTender({
+    sourceFacts: { title: 'Construction of District Roads', sector: 'Construction', organization: 'Ministry of Works', location: 'Kampala', deadline: '2027-09-28', reference: 'PPDA/DEMO/2026/001' },
+    sourceText: 'This tender is for the construction of a district road network spanning 12km. Bidders must submit a valid company registration certificate and evidence of at least two similar past road projects. Required documents: certificate of incorporation, tax clearance certificate, technical proposal. Deadline: 2027-09-28.',
+    adapter: cacheAdapter,
+    scenarioKey: 'construction_good',
+    cache
+  }), 'SKIPPED_CACHE_HIT');
+
+  const cacheAdapterCallsOk = cacheAdapter.getCallCount() === 1;
+  cacheAdapterCallsOk ? pass++ : fail++;
+  console.log((cacheAdapterCallsOk ? '  PASS ' : '  FAIL ') + 'Cache — adapter was only called once across both requests (actual calls: ' + cacheAdapter.getCallCount() + ')');
+
+  /* ============================================================
+     USAGE GUARD TESTS
+     ============================================================ */
+  console.log('');
+  console.log('=== USAGE GUARD TESTS ===');
+
+  const usageGuard = createUsageGuard(1);
+  const usageAdapter = createMockAdapter(scenarios);
+
+  await run('Usage guard — first call allowed', enrichTender({
+    sourceFacts: { title: 'IT Tender A', sector: 'IT', organization: 'Org A', location: 'Kampala', deadline: '2027-10-05', reference: null },
+    sourceText: 'IT tender content A.',
+    adapter: usageAdapter,
+    scenarioKey: 'it_good',
+    usageGuard
+  }), 'ACCEPTED');
+
+  await run('Usage guard — second call blocked by limit', enrichTender({
+    sourceFacts: { title: 'IT Tender B', sector: 'IT', organization: 'Org B', location: 'Jinja', deadline: '2027-10-06', reference: null },
+    sourceText: 'IT tender content B (different from A, so no cache hit).',
+    adapter: usageAdapter,
+    scenarioKey: 'it_good',
+    usageGuard
+  }), 'SKIPPED_USAGE_LIMIT');
+
+  const usageAdapterCallsOk = usageAdapter.getCallCount() === 1;
+  usageAdapterCallsOk ? pass++ : fail++;
+  console.log((usageAdapterCallsOk ? '  PASS ' : '  FAIL ') + 'Usage guard — adapter was only actually called once (actual calls: ' + usageAdapter.getCallCount() + ')');
+
+  console.log('');
+  console.log('=== SUMMARY ===');
+  console.log('Passed: ' + pass);
+  console.log('Failed: ' + fail);
+
+  if (fail > 0) {
+    process.exitCode = 1;
+  }
+}
+
+runAllTests();
