@@ -1,0 +1,74 @@
+name: TenderAlert Pipeline Tests (Dry Run)
+
+# SAFE BY DESIGN — this workflow does NOT connect to Supabase and does NOT
+# call supabase-adapter.js's insert() function anywhere. It only:
+#   1. Runs the existing (fully mocked, no-network) test suite
+#   2. Confirms supabase-adapter.js loads without error
+#   3. Confirms the two secrets exist, WITHOUT ever printing their values
+#
+# Manual trigger only for now. The commented `schedule:` block below shows
+# exactly how to enable automatic runs later, once this has been reviewed
+# and approved — nothing here fires on its own until that's uncommented.
+
+"on":
+  workflow_dispatch: {}
+  # Uncomment to enable automatic scheduled runs later.
+  # GitHub Actions schedules are always UTC. Uganda is EAT (UTC+3), so
+  # '0 5 * * *' below (5:00 AM UTC) = 8:00 AM in Uganda.
+  # schedule:
+  #   - cron: '0 5 * * *'
+
+# Least privilege: this workflow only reads the repository. It never
+# commits, opens issues/PRs, or writes anything back.
+permissions:
+  contents: read
+
+jobs:
+  test-and-verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          # No dependency install step — this project has no package.json
+          # or node_modules. Every pipeline file uses only Node's built-ins
+          # (fetch, crypto), so there is nothing to install here.
+
+      - name: Run the complete pipeline test suite
+        run: |
+          set -e
+          for f in normalization.test.js validation.test.js dedup.test.js \
+                   enrichment.test.js final-validation.test.js record-assembly.test.js \
+                   insertion-executor.test.js pipeline.integration.test.js supabase-adapter.test.js; do
+            echo "=== Running $f ==="
+            node "$f"
+          done
+
+      - name: Confirm supabase-adapter.js loads correctly (no env vars touched yet)
+        run: |
+          node -e "require('./supabase-adapter').createSupabaseAdapter(); console.log('supabase-adapter.js loaded and constructed successfully.')"
+
+      - name: Verify Supabase secrets are configured (values are never printed)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -e
+          if [ -z "$SUPABASE_URL" ]; then
+            echo "MISSING: SUPABASE_URL secret is not configured."
+            exit 1
+          else
+            echo "OK: SUPABASE_URL secret is configured (value not shown)."
+          fi
+          if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "MISSING: SUPABASE_SERVICE_ROLE_KEY secret is not configured."
+            exit 1
+          else
+            echo "OK: SUPABASE_SERVICE_ROLE_KEY secret is configured (value not shown)."
+          fi
+          echo "Dry run complete. No Supabase connection was attempted."
