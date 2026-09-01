@@ -1,0 +1,81 @@
+name: Supabase Connectivity Check (Read-Only)
+
+# READ-ONLY BY DESIGN. This workflow performs exactly one GET request
+# against the Tenders table, fetching at most 1 row's id, to confirm the
+# Supabase URL and key are valid and reachable. There is no insert, update,
+# delete, or upsert anywhere in this file — no code path here is capable of
+# writing to the database, not just "guarded against it."
+#
+# This is deliberately a SEPARATE workflow from pipeline-dry-run.yml, which
+# documents itself as never contacting Supabase at all. Keeping that
+# statement true, rather than blurring it here.
+#
+# Manual trigger only.
+
+"on":
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  connectivity-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      # No actions/checkout step — this workflow doesn't need any repo code,
+      # it's a fully standalone connectivity check.
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verify Supabase secrets are configured (values never printed)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -e
+          if [ -z "$SUPABASE_URL" ]; then
+            echo "MISSING: SUPABASE_URL secret is not configured."
+            exit 1
+          fi
+          if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "MISSING: SUPABASE_SERVICE_ROLE_KEY secret is not configured."
+            exit 1
+          fi
+          echo "OK: both secrets are present (values not shown)."
+
+      - name: Read-only GET check against Tenders (no write operation exists in this file)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          node -e '
+            const url = process.env.SUPABASE_URL.replace(/\/+$/, "") + "/rest/v1/Tenders?select=id&limit=1";
+
+            fetch(url, {
+              method: "GET",
+              headers: {
+                apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+                Authorization: "Bearer " + process.env.SUPABASE_SERVICE_ROLE_KEY
+              }
+            }).then(async (res) => {
+              if (!res.ok) {
+                const text = await res.text();
+                console.error("Connectivity check FAILED - HTTP " + res.status);
+                console.error("Response body: " + text);
+                process.exitCode = 1;
+                return;
+              }
+              const rows = await res.json();
+              console.log("Connectivity check PASSED.");
+              console.log("HTTP status: " + res.status);
+              console.log("Rows returned: " + rows.length + " (0 or 1 both mean success - this only proves connectivity, not that data exists)");
+              console.log("This request used GET only. No insert, update, or delete was performed.");
+            }).catch((err) => {
+              console.error("Connectivity check FAILED - network error: " + err.message);
+              process.exitCode = 1;
+            });
+          '
