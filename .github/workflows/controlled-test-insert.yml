@@ -1,0 +1,53 @@
+name: Controlled Test Insert (Real Supabase Write)
+
+# THIS WORKFLOW WRITES TO THE REAL SUPABASE Tenders TABLE.
+#
+# It runs one synthetic, obviously-fake test tender through the complete
+# pipeline: normalization -> validation -> deduplication -> AI enrichment
+# (MOCK adapter — real Gemini is not connected/approved) -> record assembly
+# -> final validation -> insertion executor (REAL Supabase adapter).
+#
+# It writes ONLY IF every gate passes, and only ONCE. If any stage rejects
+# the record, the script stops there and nothing is written.
+#
+# As an extra safety measure, the full 234+ test suite runs FIRST, as a
+# pre-flight check — if any existing test fails, the job stops immediately
+# and the real insert step never runs at all.
+#
+# Manual trigger only. Never runs automatically or on a schedule.
+
+"on":
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  controlled-test-insert:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Pre-flight — run the complete pipeline test suite first
+        run: |
+          set -e
+          for f in normalization.test.js validation.test.js dedup.test.js \
+                   enrichment.test.js final-validation.test.js record-assembly.test.js \
+                   insertion-executor.test.js pipeline.integration.test.js supabase-adapter.test.js; do
+            echo "=== Running $f ==="
+            node "$f"
+          done
+          echo "Pre-flight passed — proceeding to the controlled test insert."
+
+      - name: Controlled test insert (writes ONE synthetic record if all gates pass)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/controlled-test-insert.js
