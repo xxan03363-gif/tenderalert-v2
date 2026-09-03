@@ -34,7 +34,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
           # No dependency install step — this project has no package.json
           # or node_modules. Every pipeline file uses only Node's built-ins
           # (fetch, crypto), so there is nothing to install here.
